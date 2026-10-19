@@ -1,0 +1,925 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Bibliothèque des Ressources - Santé Mentale</title>
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
+    <!-- Bibliothèque SheetJS pour lire les fichiers Excel -->
+    <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+    <style>
+        :root {
+            --primary: #1e3a8a;
+            --primary-light: #2563eb;
+            --primary-hover: #1e293b;
+            --accent-pink: #ff4b55;
+            --accent-pink-hover: #e03e48;
+            --accent-pink-soft: rgba(255, 75, 85, 0.08);
+            
+            --bg-color: #f8fafc;
+            --card-bg: #ffffff;
+            --text-main: #0f172a;
+            --text-muted: #475569;
+            --border-color: #e2e8f0;
+            --border-hover: #cbd5e1;
+            --tag-bg: #eff6ff;
+            --tag-border: #bfdbfe;
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+            padding: 0;
+        }
+
+        body {
+            font-family: 'Inter', system-ui, -apple-system, sans-serif;
+            background-color: var(--bg-color);
+            color: var(--text-main);
+            line-height: 1.5;
+            padding: 40px 20px 80px;
+            position: relative;
+            min-height: 100vh;
+        }
+        
+        body::before {
+            content: "";
+            position: fixed;
+            top: 20px;
+            left: 10px;
+            width: 340px;
+            height: 340px;
+            background-image: url("./logos/Logo%20Loupe.png");
+            background-repeat: no-repeat;
+            background-position: center;
+            background-size: contain;
+            opacity: 0.05;
+            pointer-events: none;
+            z-index: -1;
+        }
+
+        /* Boutons Importer et Vider discrets tout en haut à droite de la page */
+        .top-excel-actions {
+            position: absolute;
+            top: 10px;
+            right: 15px;
+            display: flex;
+            align-items: center;
+            gap: 6px;
+            z-index: 1000;
+        }
+        .excel-btn-label {
+            background-color: #eff6ff;
+            color: #1e40af;
+            border: 1px solid #bfdbfe;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-weight: 500;
+            font-size: 0.75rem;
+            cursor: pointer;
+            display: inline-flex;
+            align-items: center;
+            gap: 4px;
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+            white-space: nowrap;
+        }
+        .excel-btn-label:hover {
+            background-color: #dbeafe;
+            border-color: #93c5fd;
+        }
+        .clear-storage-btn {
+            background-color: #eff6ff;
+            color: #1e40af;
+            border: 1px solid #bfdbfe;
+            padding: 4px 10px;
+            border-radius: 6px;
+            font-weight: 500;
+            font-size: 0.75rem;
+            cursor: pointer;
+            transition: background-color 0.2s ease, border-color 0.2s ease;
+            white-space: nowrap;
+        }
+        .clear-storage-btn:hover {
+            background-color: #dbeafe;
+            border-color: #93c5fd;
+        }
+
+        .container {
+            max-width: 1240px;
+            margin: 0 auto;
+        }
+
+        .header-logos {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 32px;
+            padding: 12px 32px;
+            background: #ffffff;
+            border-radius: 20px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 2px 10px rgba(15, 23, 42, 0.03);
+            gap: 20px;
+            min-height: 100px;
+            box-sizing: border-box;
+        }
+        
+        .logo-side.left {
+            flex: 1;
+            display: flex;
+            align-items: center;
+            justify-content: flex-start;
+            gap: 15px;
+        }
+        .header-title-center {
+            flex: 1.5;
+            text-align: center;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 0 12px;
+        }
+        .bandeau-title {
+            font-size: 2.1rem;
+            font-weight: 800;
+            color: var(--primary);
+            letter-spacing: -0.6px;
+            line-height: 1.15;
+            margin-bottom: 4px;
+        }
+        .bandeau-subtitle {
+            font-size: 0.95rem;
+            color: var(--accent-pink);
+            font-weight: 600;
+            letter-spacing: 0.4px;
+        }
+        .logo-side.right {
+            flex: 1.2;
+            display: flex;
+            align-items: center;
+            justify-content: flex-end;
+            gap: 12px;
+            flex-wrap: wrap;
+        }
+
+        .logo-or {
+            max-height: 85px;
+            max-width: 290px;
+            width: auto;
+            object-fit: contain;
+            transition: transform 0.2s ease;
+        }
+        .logo-link {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            text-decoration: none;
+            cursor: pointer;
+        }
+        .logo-vinatier {
+            max-height: 65px;
+            max-width: 150px;
+            width: auto;
+            object-fit: contain;
+            display: block;
+            transition: transform 0.2s ease;
+        }
+        .logo-crr {
+            max-height: 75px;
+            max-width: 170px;
+            width: auto;
+            object-fit: contain;
+            display: block;
+            transition: transform 0.2s ease;
+        }
+        .logo-link:hover img {
+            transform: scale(1.03);
+        }
+        .logo-or:hover {
+            transform: scale(1.03);
+        }
+
+        .header-intro {
+            text-align: center;
+            margin-bottom: 32px;
+        }
+        .header-intro p {
+            color: var(--text-muted);
+            font-size: 1.15rem;
+            max-width: 760px;
+            margin: 0 auto;
+        }
+        
+        .search-actions-container {
+            margin-bottom: 32px;
+            position: sticky;
+            top: 16px;
+            z-index: 100;
+            max-width: 900px;
+            margin-left: auto;
+            margin-right: auto;
+            display: flex;
+            align-items: center;
+            gap: 16px;
+        }
+        .search-container {
+            flex: 1;
+            position: relative;
+        }
+        .search-input {
+            width: 100%;
+            padding: 18px 20px 18px 62px;
+            font-size: 1.05rem;
+            border: 2px solid var(--border-color);
+            border-radius: 16px;
+            background-color: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            color: var(--text-main);
+            transition: all 0.25s ease;
+            box-shadow: 0 4px 18px rgba(15, 23, 42, 0.08);
+            position: relative;
+            z-index: 1;
+        }
+        .search-input:focus {
+            outline: none;
+            border-color: var(--accent-pink);
+            background-color: #ffffff;
+            box-shadow: 0 0 0 4px rgba(255, 75, 85, 0.15), 0 8px 25px rgba(15, 23, 42, 0.12);
+        }
+        .search-icon-img {
+            position: absolute;
+            left: 16px;
+            top: 50%;
+            transform: translateY(-50%);
+            width: 34px;
+            height: 34px;
+            object-fit: contain;
+            pointer-events: none;
+            z-index: 10;
+            transition: transform 0.2s ease;
+            filter: brightness(0) saturate(100%) invert(42%) sepia(85%) saturate(1982%) hue-rotate(331deg) brightness(101%) contrast(101%);
+        }
+        .search-container:focus-within .search-icon-img {
+            transform: translateY(-50%) scale(1.1);
+        }
+
+        .filter-section {
+            background: white;
+            padding: 22px 28px;
+            border-radius: 18px;
+            margin-bottom: 22px;
+            border: 1px solid var(--border-color);
+            box-shadow: 0 1px 4px rgba(15, 23, 42, 0.02);
+        }
+        .filter-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 14px;
+        }
+        .filter-section h3 {
+            font-size: 1.05rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
+        }
+        .btn-group {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 8px;
+        }
+        .filter-btn {
+            padding: 9px 16px;
+            font-size: 0.88rem;
+            font-weight: 500;
+            border-radius: 12px;
+            border: 1px solid var(--border-color);
+            background-color: #f8fafc;
+            color: var(--text-main);
+            cursor: pointer;
+            transition: all 0.2s ease;
+            user-select: none;
+        }
+        .filter-btn:hover {
+            background-color: #f1f5f9;
+            border-color: var(--primary);
+            color: var(--primary);
+        }
+        .filter-btn.active {
+            background-color: var(--accent-pink);
+            color: white;
+            border-color: var(--accent-pink);
+            font-weight: 600;
+            box-shadow: 0 2px 6px rgba(255, 75, 85, 0.25);
+        }
+        .filter-btn.disabled {
+            opacity: 0.35;
+            cursor: not-allowed;
+            background-color: #f8fafc;
+            border-style: dashed;
+            color: var(--text-muted);
+        }
+
+        .actions-bar {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            margin-bottom: 24px;
+            padding: 4px 8px;
+        }
+        .results-count {
+            font-weight: 600;
+            color: var(--text-muted);
+            font-size: 0.98rem;
+        }
+        .reset-btn {
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            -webkit-backdrop-filter: blur(10px);
+            border: 2px solid var(--border-color);
+            color: var(--accent-pink);
+            cursor: pointer;
+            font-weight: 600;
+            font-size: 0.95rem;
+            transition: all 0.2s ease;
+            padding: 16px 22px;
+            border-radius: 16px;
+            white-space: nowrap;
+            box-shadow: 0 4px 18px rgba(15, 23, 42, 0.08);
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+        }
+        .reset-btn:hover {
+            background-color: #ffffff;
+            border-color: var(--accent-pink);
+            color: var(--accent-pink-hover);
+            box-shadow: 0 6px 20px rgba(255, 75, 85, 0.15);
+        }
+
+        .grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(360px, 1fr));
+            gap: 24px;
+        }
+        .card {
+            background: var(--card-bg);
+            border-radius: 18px;
+            padding: 24px 26px;
+            border: 1px solid var(--border-color);
+            display: flex;
+            flex-direction: column;
+            justify-content: space-between;
+            transition: transform 0.25s ease, border-color 0.25s ease, box-shadow 0.25s ease;
+            box-shadow: 0 2px 6px rgba(15, 23, 42, 0.02);
+        }
+        .card:hover {
+            transform: translateY(-4px);
+            border-color: var(--accent-pink);
+            box-shadow: 0 8px 24px rgba(15, 23, 42, 0.06);
+        }
+        .card-header {
+            display: flex;
+            align-items: flex-start;
+            gap: 14px;
+            margin-bottom: 16px;
+        }
+        .site-logo {
+            width: 36px;
+            height: 36px;
+            border-radius: 10px;
+            object-fit: contain;
+            background: #f1f5f9;
+            flex-shrink: 0;
+            padding: 4px;
+            border: 1px solid var(--border-color);
+        }
+        .card-title-area {
+            flex: 1;
+        }
+        .card-title {
+            font-size: 1.15rem;
+            font-weight: 700;
+            color: var(--primary);
+            text-decoration: none;
+            display: inline-block;
+            margin-bottom: 4px;
+            line-height: 1.35;
+            transition: color 0.2s;
+        }
+        .card-title:hover {
+            color: var(--accent-pink);
+            text-decoration: underline;
+        }
+        .domain-name {
+            font-size: 0.8rem;
+            color: var(--text-muted);
+            font-weight: 500;
+        }
+        .tags {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 6px;
+            margin-bottom: 16px;
+        }
+        .tag {
+            font-size: 0.76rem;
+            font-weight: 600;
+            padding: 4px 10px;
+            border-radius: 8px;
+            letter-spacing: 0.2px;
+        }
+        .tag-thematique {
+            background-color: var(--tag-bg);
+            color: var(--primary);
+            border: 1px solid var(--tag-border);
+        }
+        .tag-format {
+            background-color: #f1f5f9;
+            color: #475569;
+            border: 1px solid #e2e8f0;
+        }
+        .card-desc {
+            font-size: 0.925rem;
+            color: var(--text-muted);
+            margin-bottom: 20px;
+            flex-grow: 1;
+            line-height: 1.55;
+        }
+        .card-footer {
+            border-top: 1px solid var(--border-color);
+            padding-top: 16px;
+            display: flex;
+            justify-content: flex-end;
+        }
+        .access-link {
+            font-size: 0.92rem;
+            font-weight: 600;
+            color: var(--accent-pink);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 6px;
+            transition: all 0.2s;
+        }
+        .access-link:hover {
+            color: var(--accent-pink-hover);
+            transform: translateX(3px);
+        }
+
+        .no-results {
+            grid-column: 1 / -1;
+            text-align: center;
+            padding: 60px 20px;
+            background: white;
+            border-radius: 18px;
+            color: var(--text-muted);
+            font-size: 1.1rem;
+            border: 1px dashed var(--border-color);
+        }
+
+        .back-to-top {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 50px;
+            height: 50px;
+            border-radius: 50%;
+            background-color: var(--primary);
+            color: #ffffff;
+            border: none;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            box-shadow: 0 4px 16px rgba(30, 58, 138, 0.35);
+            opacity: 0;
+            visibility: hidden;
+            transform: translateY(20px);
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            z-index: 999;
+        }
+        .back-to-top.visible {
+            opacity: 1;
+            visibility: visible;
+            transform: translateY(0);
+        }
+        .back-to-top:hover {
+            background-color: var(--accent-pink);
+            transform: translateY(-4px);
+            box-shadow: 0 6px 20px rgba(255, 75, 85, 0.4);
+        }
+        .back-to-top svg {
+            width: 24px;
+            height: 24px;
+            stroke: currentColor;
+            stroke-width: 2.5;
+            transition: transform 0.2s ease;
+        }
+
+        @media (max-width: 900px) {
+            .header-logos {
+                flex-direction: column;
+                gap: 18px;
+                text-align: center;
+                padding: 20px 16px;
+            }
+            .logo-side.left, .logo-side.right, .header-title-center {
+                justify-content: center;
+                width: 100%;
+            }
+            .bandeau-title {
+                font-size: 1.65rem;
+            }
+            .search-actions-container {
+                flex-direction: column;
+            }
+            .reset-btn {
+                width: 100%;
+            }
+            .grid {
+                grid-template-columns: 1fr;
+            }
+        }
+    </style>
+</head>
+<body>
+
+<!-- Boutons Importer et Vider discrets placés tout en haut à droite -->
+<div class="top-excel-actions">
+    <label class="excel-btn-label" title="Importer un fichier Excel">
+        📁 Importer
+        <input type="file" id="excelFileInput" accept=".xlsx, .xls, .csv" style="display: none;" onchange="handleExcelImport(event)">
+    </label>
+    <button class="clear-storage-btn" onclick="clearAllResources()" title="Effacer toutes les ressources enregistrées">🗑️ Vider</button>
+</div>
+
+<div class="container">
+    <div class="header-logos">
+        <div class="logo-side left">
+            <img src="./logos/Logo%20OR.png" alt="Observatoire du Rétablissement" class="logo-or">
+        </div>
+        <div class="header-title-center">
+            <h1 class="bandeau-title">Bibliothèque des Ressources</h1>
+            <p class="bandeau-subtitle">Santé mentale & rétablissement</p>
+        </div>
+        <div class="logo-side right">
+            <a href="https://www.ch-le-vinatier.fr/" target="_blank" rel="noopener noreferrer" class="logo-link" title="Visiter le site du CH Le Vinatier">
+                <img src="./logos/Logo%20Vinatier.png" alt="Logo CH Le Vinatier" class="logo-vinatier">
+            </a>
+            <a href="https://centre-ressource-rehabilitation.org/" target="_blank" rel="noopener noreferrer" class="logo-link" title="Visiter le site du Centre Ressource de Réhabilitation Psychosociale">
+                <img src="./logos/Logo%20CRR.png" alt="Logo Centre Ressource de Réhabilitation" class="logo-crr">
+            </a>
+        </div>
+    </div>
+
+    <div class="header-intro">
+        <p>Retrouvez l'intégralité des ressources, outils et formations référencés en santé mentale et rétablissement de l'Observatoire du Rétablissement.</p>
+    </div>
+
+    <div class="search-actions-container">
+        <div class="search-container">
+            <img src="./logos/Logo Loupe.png" alt="Recherche" class="search-icon-img">
+            <input type="text" id="searchInput" class="search-input" placeholder="Rechercher par mot-clé, titre, description, domaine..." oninput="filterResources()">
+        </div>
+        <button class="reset-btn" onclick="resetFilters()">Réinitialiser les filtres</button>
+    </div>
+
+    <div class="filter-section">
+        <div class="filter-header">
+            <h3>Thématiques principales</h3>
+        </div>
+        <div id="thematiquesContainer" class="btn-group"></div>
+    </div>
+
+    <div id="subThematiquesSection" class="filter-section" style="display: none;">
+        <div class="filter-header">
+            <h3 id="subThematiquesTitle">Sous-thématiques</h3>
+        </div>
+        <div id="subThematiquesContainer" class="btn-group"></div>
+    </div>
+
+    <div class="filter-section">
+        <div class="filter-header">
+            <h3>Formats de ressources</h3>
+        </div>
+        <div id="formatsContainer" class="btn-group"></div>
+    </div>
+
+    <div class="actions-bar">
+        <div id="resultsCount" class="results-count">Chargement des ressources...</div>
+    </div>
+
+    <div id="resourcesGrid" class="grid"></div>
+</div>
+
+<button id="backToTop" class="back-to-top" onclick="scrollToTop()" title="Remonter en haut" aria-label="Remonter en haut de la page">
+    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5" stroke-linecap="round" stroke-linejoin="round">
+        <polyline points="18 15 12 9 6 15"></polyline>
+    </svg>
+</button>
+
+<script>
+    // Taxonomie complète intégrée en dur (Thématiques et Sous-thématiques)[cite: 1]
+    const taxonomy = {
+        "Autosoins": [],
+        "Conduites à risques": ["Addictions", "Suicide", "Auto-mutilation"],
+        "Droits": ["Droit des usagers", "Dispositifs d’anticipation et de planification (DAP/MAP/PCC)"],
+        "Enfant et adolescent": [],
+        "Habilités sociales et Communication": [],
+        "Informations et Sensibilisations": [
+            "S’informer et comprendre la santé mentale",
+            "Se former, sensibiliser et agir collectivement",
+            "Agir pour sa santé mentale et son rétablissement"
+        ],
+        "Pratiques du soin": ["Psychoéducation"],
+        "LGBTQIA+": [],
+        "Lutte contre la stigmatisation": [],
+        "Lutte contre les discriminations diverses": [],
+        "Migration et Interculturalités": [],
+        "Aidance en santé mentale": ["Pair-aidance", "Proche aidant"],
+        "Troubles du neurodéveloppement et Neurodiversité": [],
+        "Troubles Psychiques": ["Générale", "Traumas et Dissociation"]
+    };
+
+    // Formats intégrés en dur[cite: 1]
+    const allFormats = [
+        "Sites et applications",
+        "Fiches pratiques et guides",
+        "Vidéos et podcasts",
+        "Outils interactifs et jeux",
+        "Formations et MOOC",
+        "Programmes et dispositifs",
+        "Associations et collectifs",
+        "Événements",
+        "Lignes d’écoutes et chats"
+    ];
+
+    let resources = [];
+
+    let selectedThematique = 'ALL';
+    let selectedSubThematique = 'ALL';
+    let selectedFormat = 'ALL';
+
+    function init() {
+        const storedResources = localStorage.getItem('savedResources');
+        if (storedResources) {
+            try {
+                resources = JSON.parse(storedResources);
+            } catch (e) {
+                console.error("Erreur lors du chargement du stockage local", e);
+            }
+        }
+
+        renderThematiques();
+        renderFormats();
+        filterResources();
+    }
+
+    function handleExcelImport(e) {
+        const file = e.target.files[0];
+        if (!file) return;
+
+        const reader = new FileReader();
+        reader.onload = function(e) {
+            try {
+                const data = new Uint8Array(e.target.result);
+                const workbook = XLSX.read(data, { type: 'array' });
+                
+                const firstSheetName = workbook.SheetNames[0];
+                const worksheet = workbook.Sheets[firstSheetName];
+                const jsonData = XLSX.utils.sheet_to_json(worksheet);
+
+                const newResources = [];
+                jsonData.forEach(row => {
+                    const lien = row['Lien'] || '#';
+                    let domain = row['Domaine'];
+                    if (!domain) {
+                        try {
+                            domain = new URL(lien).hostname;
+                        } catch {
+                            domain = 'ressource';
+                        }
+                    }
+
+                    newResources.push({
+                        ressource: row['Ressource'] || row['Titre'] || 'Sans titre',
+                        lien: lien,
+                        description: row['Description'] || '',
+                        thematique: row['Thematique'] || 'Autosoins',
+                        sousThematique: row['SousThematique'] || '',
+                        format: row['Format'] || 'Sites et applications',
+                        domain: domain,
+                        favicon: row['Favicon'] || ''
+                    });
+                });
+
+                resources = [...resources, ...newResources];
+                localStorage.setItem('savedResources', JSON.stringify(resources));
+                document.getElementById('excelFileInput').value = '';
+
+                resetFilters();
+                alert(`${newResources.length} nouvelle(s) ressource(s) ajoutée(s) avec succès ! Total : ${resources.length} ressources.`);
+            } catch (error) {
+                alert("Erreur lors de la lecture du fichier Excel. Vérifiez le format des colonnes.");
+                console.error(error);
+            }
+        };
+        reader.readAsArrayBuffer(file);
+    }
+
+    function clearAllResources() {
+        if (confirm("Voulez-vous vraiment effacer toutes les ressources enregistrées en mémoire ?")) {
+            localStorage.removeItem('savedResources');
+            resources = [];
+            resetFilters();
+            alert("La bibliothèque a été entièrement vidée.");
+        }
+    }
+
+    function renderThematiques() {
+        const container = document.getElementById('thematiquesContainer');
+        const thematiques = Object.keys(taxonomy).sort((a, b) => a.localeCompare(b, 'fr'));
+
+        let html = `<button class="filter-btn ${selectedThematique === 'ALL' ? 'active' : ''}" onclick="setThematique('ALL')">Toutes les thématiques</button>`;
+        thematiques.forEach(th => {
+            const isActive = selectedThematique === th ? 'active' : '';
+            html += `<button class="filter-btn ${isActive}" onclick="setThematique('${th.replace(/'/g, "\\'")}')">${th}</button>`;
+        });
+        container.innerHTML = html;
+        renderSubThematiques();
+    }
+
+    function renderSubThematiques() {
+        const section = document.getElementById('subThematiquesSection');
+        const container = document.getElementById('subThematiquesContainer');
+
+        if (selectedThematique === 'ALL' || !taxonomy[selectedThematique] || taxonomy[selectedThematique].length === 0) {
+            section.style.display = 'none';
+            selectedSubThematique = 'ALL';
+            container.innerHTML = '';
+            return;
+        }
+
+        section.style.display = 'block';
+        const subList = taxonomy[selectedThematique];
+
+        let html = `<button class="filter-btn ${selectedSubThematique === 'ALL' ? 'active' : ''}" onclick="setSubThematique('ALL')">Toutes les sous-thématiques</button>`;
+        subList.forEach(sub => {
+            const isActive = selectedSubThematique === sub ? 'active' : '';
+            html += `<button class="filter-btn ${isActive}" onclick="setSubThematique('${sub.replace(/'/g, "\\'")}')">${sub}</button>`;
+        });
+        container.innerHTML = html;
+    }
+
+    function renderFormats() {
+        const container = document.getElementById('formatsContainer');
+        const sortedFormats = [...allFormats].sort((a, b) => a.localeCompare(b, 'fr'));
+
+        let availableFormats = sortedFormats;
+        if (selectedThematique !== 'ALL') {
+            let filtered = resources.filter(r => r.thematique === selectedThematique);
+            if (selectedSubThematique !== 'ALL') {
+                filtered = filtered.filter(r => r.sousThematique === selectedSubThematique);
+            }
+            availableFormats = [...new Set(filtered.map(r => r.format))];
+        }
+
+        let html = `<button class="filter-btn ${selectedFormat === 'ALL' ? 'active' : ''}" onclick="setFormat('ALL')">Tous les formats</button>`;
+        
+        sortedFormats.forEach(fmt => {
+            const isAvailable = availableFormats.includes(fmt);
+            const activeClass = selectedFormat === fmt ? 'active' : '';
+            
+            if (isAvailable || selectedThematique === 'ALL') {
+                html += `<button class="filter-btn ${activeClass}" onclick="setFormat('${fmt.replace(/'/g, "\\'")}')">${fmt}</button>`;
+            } else {
+                html += `<button class="filter-btn disabled" title="Aucun format de ce type pour cette sélection" disabled>${fmt}</button>`;
+            }
+        });
+        container.innerHTML = html;
+    }
+
+    function setThematique(th) {
+        selectedThematique = th;
+        selectedSubThematique = 'ALL';
+        if (selectedFormat !== 'ALL') {
+            const matching = resources.some(r => r.thematique === th && r.format === selectedFormat);
+            if (!matching) selectedFormat = 'ALL';
+        }
+        renderThematiques();
+        renderFormats();
+        filterResources();
+    }
+
+    function setSubThematique(sub) {
+        selectedSubThematique = sub;
+        renderSubThematiques();
+        renderFormats();
+        filterResources();
+    }
+
+    function setFormat(fmt) {
+        selectedFormat = fmt;
+        renderFormats();
+        filterResources();
+    }
+
+    function resetFilters() {
+        selectedThematique = 'ALL';
+        selectedSubThematique = 'ALL';
+        selectedFormat = 'ALL';
+        document.getElementById('searchInput').value = '';
+        renderThematiques();
+        renderFormats();
+        filterResources();
+    }
+
+    function filterResources() {
+        const query = document.getElementById('searchInput').value.toLowerCase().trim();
+        const grid = document.getElementById('resourcesGrid');
+        const countDiv = document.getElementById('resultsCount');
+
+        let filtered = resources.filter(r => {
+            const matchThematique = (selectedThematique === 'ALL' || r.thematique === selectedThematique);
+            const matchSubThematique = (selectedSubThematique === 'ALL' || r.sousThematique === selectedSubThematique);
+            const matchFormat = (selectedFormat === 'ALL' || r.format === selectedFormat);
+            
+            const matchQuery = !query || 
+                r.ressource.toLowerCase().includes(query) ||
+                r.description.toLowerCase().includes(query) ||
+                r.domain.toLowerCase().includes(query) ||
+                r.thematique.toLowerCase().includes(query) ||
+                (r.sousThematique && r.sousThematique.toLowerCase().includes(query)) ||
+                r.format.toLowerCase().includes(query);
+
+            return matchThematique && matchSubThematique && matchFormat && matchQuery;
+        });
+
+        if (filtered.length === 0) {
+            grid.innerHTML = `<div class="no-results">Aucune ressource ne correspond à votre recherche ou vos filtres.</div>`;
+            countDiv.textContent = resources.length === 0 ? `Aucune ressource chargée. Veuillez importer un fichier Excel.` : `0 ressource trouvée`;
+            return;
+        }
+
+        countDiv.textContent = `${filtered.length} ressource${filtered.length > 1 ? 's' : ''} trouvée${filtered.length > 1 ? 's' : ''}`;
+
+        let html = '';
+        filtered.forEach(r => {
+            const favicon = r.favicon || `https://www.google.com/s2/favicons?domain=${r.domain}&sz=64`;
+            const subTag = r.sousThematique ? `<span class="tag tag-thematique">${r.sousThematique}</span>` : '';
+            
+            html += `
+                <div class="card">
+                    <div>
+                        <div class="card-header">
+                            <img src="${favicon}" alt="" class="site-logo" onerror="this.style.display='none'">
+                            <div class="card-title-area">
+                                <a href="${r.lien}" target="_blank" rel="noopener noreferrer" class="card-title">${r.ressource}</a>
+                                <div class="domain-name">${r.domain}</div>
+                            </div>
+                        </div>
+                        <div class="tags">
+                            <span class="tag tag-thematique">${r.thematique}</span>
+                            ${subTag}
+                            <span class="tag tag-format">${r.format}</span>
+                        </div>
+                        <p class="card-desc">${r.description}</p>
+                    </div>
+                    <div class="card-footer">
+                        <a href="${r.lien}" target="_blank" rel="noopener noreferrer" class="access-link">
+                            Accéder à la ressource &rarr;
+                        </a>
+                    </div>
+                </div>
+            `;
+        });
+        grid.innerHTML = html;
+    }
+
+    const backToTopBtn = document.getElementById('backToTop');
+    window.addEventListener('scroll', () => {
+        if (window.scrollY > 300) {
+            backToTopBtn.classList.add('visible');
+        } else {
+            backToTopBtn.classList.remove('visible');
+        }
+    });
+
+    function scrollToTop() {
+        window.scrollTo({
+            top: 0,
+            behavior: 'smooth'
+        });
+    }
+
+    window.onload = init;
+</script>
+
+</body>
+</html>
